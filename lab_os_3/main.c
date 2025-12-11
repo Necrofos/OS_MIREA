@@ -7,26 +7,49 @@
 #include <signal.h>
 #include <string.h>
 
-void exit_handler(void);
-void sigint_handler(int signum);
-void sigterm_handler(int signum, siginfo_t *info, void *context);
+void exitHandler(void)
+{
+    printf("--- [atexit] Process PID=%d is cleaning up and quitting. ---\n", getpid());
+}
 
-int main(void) {
-    if (atexit(exit_handler) != 0) {
+void sigintHandler(int signum)
+{
+    (void)signum;
+    const char msg[] = "--- [signal] SIGINT received (Ctrl+C). Ignoring. ---\n";
+    write(STDOUT_FILENO, msg, sizeof(msg) - 1);
+}
+
+void sigtermHandler(int signum, siginfo_t *info, void *context)
+{
+    (void)info;
+    (void)context;
+    char msg[128];
+    snprintf(
+        msg, sizeof(msg), "--- [sigaction] SIGTERM (%d) received. Shutting down. ---\n", signum);
+    write(STDOUT_FILENO, msg, strlen(msg));
+    _exit(1);
+}
+
+int main(void)
+{
+    if (atexit(exitHandler) != 0)
+    {
         perror("atexit");
         return 1;
     }
 
-    if (signal(SIGINT, sigint_handler) == SIG_ERR) {
+    if (signal(SIGINT, sigintHandler) == SIG_ERR)
+    {
         perror("signal");
         return 1;
     }
 
-    struct sigaction sa;
-    memset(&sa, 0, sizeof(sa));
-    sa.sa_sigaction = sigterm_handler;
-    sa.sa_flags = SA_SIGINFO;
-    if (sigaction(SIGTERM, &sa, NULL) == -1) {
+    struct sigaction sigAction;
+    memset(&sigAction, 0, sizeof(sigAction));
+    sigAction.sa_sigaction = sigtermHandler;
+    sigAction.sa_flags     = SA_SIGINFO;
+    if (sigaction(SIGTERM, &sigAction, NULL) == -1)
+    {
         perror("sigaction");
         return 1;
     }
@@ -36,37 +59,47 @@ int main(void) {
     printf("Test SIGTERM handler: in another terminal run: kill %d\n\n", getpid());
 
     pid_t pid = fork();
-    if (pid < 0) {
+    if (pid < 0)
+    {
         perror("fork");
         return 1;
-    } else if (pid == 0) {
-        
+    }
+    else if (pid == 0)
+    {
         printf("[child] Hello! PID=%d, PPID=%d\n", getpid(), getppid());
         printf("[child] Sleeping for 2 seconds...\n");
         sleep(2);
         printf("[child] Exiting with code 7.\n");
         exit(7);
-    } else {
-    
-        FILE *f = fopen("pid.txt", "w");
-        if (f) {
-            fprintf(f, "%d\n", getpid());
-            fclose(f);
+    }
+    else
+    {
+        FILE *file = fopen("pid.txt", "w");
+        if (file)
+        {
+            fprintf(file, "%d\n", getpid());
+            fclose(file);
         }
 
         printf("[parent] Hi! PID=%d, PPID=%d\n", getpid(), getppid());
         int status = 0;
         printf("[parent] Waiting for the child to finish...\n");
-        if (wait(&status) == -1) {
+        if (wait(&status) == -1)
+        {
             perror("wait");
             return 1;
         }
 
-        if (WIFEXITED(status)) {
+        if (WIFEXITED(status))
+        {
             printf("[parent] Child exited with status %d.\n", WEXITSTATUS(status));
-        } else if (WIFSIGNALED(status)) {
+        }
+        else if (WIFSIGNALED(status))
+        {
             printf("[parent] Child was terminated by signal %d.\n", WTERMSIG(status));
-        } else {
+        }
+        else
+        {
             printf("[parent] Child finished in an unexpected way.\n");
         }
 
@@ -76,24 +109,4 @@ int main(void) {
 
     printf("Main: PID=%d is about to exit.\n", getpid());
     return 0;
-}
-
-void exit_handler(void) {
-    printf("--- [atexit] Process PID=%d is cleaning up and quitting. ---\n", getpid());
-}
-
-void sigint_handler(int signum) {
-    (void)signum; 
-    const char msg[] = "--- [signal] SIGINT received (Ctrl+C). Ignoring. ---\n";
-    write(STDOUT_FILENO, msg, sizeof(msg) - 1);
-}
-
-void sigterm_handler(int signum, siginfo_t *info, void *context) {
-    (void)info; (void)context; 
-    char msg[128];
-    snprintf(msg, sizeof(msg),
-             "--- [sigaction] SIGTERM (%d) received. Shutting down. ---\n",
-             signum);
-    write(STDOUT_FILENO, msg, strlen(msg));
-    _exit(1); 
 }

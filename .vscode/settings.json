@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "mygrep.h": "c",
+        "sysmacros.h": "c",
+        "stdlib.h": "c",
+        "stdint.h": "c",
+        "locale.h": "c"
+    }
+}
