@@ -1,3 +1,3 @@
 #pragma once
 
-int mygrepRun(int argc, char *argv[]);
+int myGrepRun(int argc, char *argv[]);

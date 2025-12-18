@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include "mycat.h"
+#include "myCat.h"
 
 int main(int argc, char *argv[])
 {

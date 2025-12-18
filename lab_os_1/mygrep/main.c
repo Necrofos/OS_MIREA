@@ -5,7 +5,7 @@
 
 int main(int argc, char *argv[])
 {
-    mygrepRun(argc, argv);
+    myGrepRun(argc, argv);
 
     fprintf(
         stderr,

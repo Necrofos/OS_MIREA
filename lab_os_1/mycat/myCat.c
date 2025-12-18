@@ -1,4 +1,4 @@
-#include "mycat.h"
+#include "myCat.h"
 #include <stdio.h>
 #include <string.h>
 
